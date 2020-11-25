@@ -9,6 +9,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioGroup;
 
+import com.example.healthcoaches.objectClasses.BioInfo;
+import com.example.healthcoaches.objectClasses.User;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 public class BioInfoActivity extends AppCompatActivity {
 
     private EditText Weight = findViewById(R.id.edtWeight);
@@ -17,6 +22,8 @@ public class BioInfoActivity extends AppCompatActivity {
     private EditText WeightGoal = findViewById(R.id.edtWeightGoal);
     private RadioGroup FoodPReference = findViewById(R.id.rgbFoodPreference);
 
+    User user = new User();
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +34,7 @@ public class BioInfoActivity extends AppCompatActivity {
         String height;
         String age;
         String weightGoal;
+        String username;
         int foodPreference;
         String foodPreferenceS;
        weight = Weight.getEditableText().toString();
@@ -48,7 +56,21 @@ public class BioInfoActivity extends AppCompatActivity {
             case 3:
                 foodPreferenceS = "No Preference";
                 break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + foodPreference);
         }
+        username = user.username;
+
+        BioInfo bioInfo = new BioInfo(weight, height, age, weightGoal, foodPreferenceS, username);
+
+        //Getting Instance of Firebase realtime database
+        FirebaseDatabase databaseInstance = FirebaseDatabase.getInstance();
+
+        //Getting Reference to a User node
+        DatabaseReference userNode = database.getReference("BiologicalInfo");
+
+        //Writing the User class object to that reference
+        userNode.setValue(bioInfo);
 
         Button bioInfoSubmit = findViewById(R.id.btnBioInfoSubmit);
         bioInfoSubmit.setOnClickListener(new View.OnClickListener() {

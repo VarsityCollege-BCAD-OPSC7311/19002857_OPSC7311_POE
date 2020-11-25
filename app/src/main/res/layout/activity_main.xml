@@ -68,13 +68,13 @@
                 android:layout_marginStart="100dp"
                 android:text="Take a picture of your meal" />
 
-            <Button
+          <!--  <Button
                 android:id="@+id/btnQuiz"
                 android:layout_width="200dp"
                 android:layout_height="80dp"
                 android:layout_marginVertical="10dp"
                 android:layout_marginStart="100dp"
-                android:text="Take the lifestyle Quiz!" />
+                android:text="Take the lifestyle Quiz!" /> -->
 
             <Button
                 android:id="@+id/btnGlCalc"

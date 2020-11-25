@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.healthcoaches">
-    <!-- Built by James Feldman 19002857 -->
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -9,14 +9,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".BloodSugarBalancingActivity"></activity>
-        <activity android:name=".QuizActivity"></activity>
-        <activity android:name=".SaveMealsActivity"></activity>
-        <activity android:name=".DailyChallengeActivity"></activity>
-        <activity android:name=".DailyLogActivity"></activity>
-        <activity android:name=".TargetGoalsActivity"></activity>
-        <activity android:name=".BioInfoActivity"></activity>
-        <activity android:name=".SignUpActivity"></activity>
+        <activity android:name=".BsbNext"></activity>
+        <activity android:name=".LoginActivity" />
+        <activity android:name=".BloodSugarBalancingActivity" />
+        <activity android:name=".QuizActivity" />
+        <activity android:name=".SaveMealsActivity" />
+        <activity android:name=".DailyChallengeActivity" />
+        <activity android:name=".DailyLogActivity" />
+        <activity android:name=".TargetGoalsActivity" />
+        <activity android:name=".BioInfoActivity" />
+        <activity android:name=".SignUpActivity" />
         <activity android:name=".StartScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -24,15 +26,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".ui.login.LoginActivity"
-            android:label="@string/title_activity_login" />
         <activity android:name=".MainActivity">
 
             <!--
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             -->

@@ -1,0 +1,1632 @@
+Index: app/src/main/java/com/example/healthcoaches/ui/login/LoggedInUserView.java
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/ui/login/LoggedInUserView.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/ui/login/LoggedInUserView.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
+@@ -1,17 +0,0 @@
+-package com.example.healthcoaches.ui.login;
+-
+-/**
+- * Class exposing authenticated user details to the UI.
+- */
+-class LoggedInUserView {
+-    private String displayName;
+-    //... other data fields that may be accessible to the UI
+-
+-    LoggedInUserView(String displayName) {
+-        this.displayName = displayName;
+-    }
+-
+-    String getDisplayName() {
+-        return displayName;
+-    }
+-}
+\ No newline at end of file
+Index: app/src/main/java/com/example/healthcoaches/ui/login/LoginResult.java
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/ui/login/LoginResult.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/ui/login/LoginResult.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
+@@ -1,31 +0,0 @@
+-package com.example.healthcoaches.ui.login;
+-
+-import androidx.annotation.Nullable;
+-
+-/**
+- * Authentication result : success (user details) or error message.
+- */
+-class LoginResult {
+-    @Nullable
+-    private LoggedInUserView success;
+-    @Nullable
+-    private Integer error;
+-
+-    LoginResult(@Nullable Integer error) {
+-        this.error = error;
+-    }
+-
+-    LoginResult(@Nullable LoggedInUserView success) {
+-        this.success = success;
+-    }
+-
+-    @Nullable
+-    LoggedInUserView getSuccess() {
+-        return success;
+-    }
+-
+-    @Nullable
+-    Integer getError() {
+-        return error;
+-    }
+-}
+\ No newline at end of file
+Index: app/src/main/java/com/example/healthcoaches/ui/login/LoginFormState.java
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/ui/login/LoginFormState.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/ui/login/LoginFormState.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
+@@ -1,40 +0,0 @@
+-package com.example.healthcoaches.ui.login;
+-
+-import androidx.annotation.Nullable;
+-
+-/**
+- * Data validation state of the login form.
+- */
+-class LoginFormState {
+-    @Nullable
+-    private Integer usernameError;
+-    @Nullable
+-    private Integer passwordError;
+-    private boolean isDataValid;
+-
+-    LoginFormState(@Nullable Integer usernameError, @Nullable Integer passwordError) {
+-        this.usernameError = usernameError;
+-        this.passwordError = passwordError;
+-        this.isDataValid = false;
+-    }
+-
+-    LoginFormState(boolean isDataValid) {
+-        this.usernameError = null;
+-        this.passwordError = null;
+-        this.isDataValid = isDataValid;
+-    }
+-
+-    @Nullable
+-    Integer getUsernameError() {
+-        return usernameError;
+-    }
+-
+-    @Nullable
+-    Integer getPasswordError() {
+-        return passwordError;
+-    }
+-
+-    boolean isDataValid() {
+-        return isDataValid;
+-    }
+-}
+\ No newline at end of file
+Index: app/src/main/java/com/example/healthcoaches/data/model/LoggedInUser.java
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/data/model/LoggedInUser.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/data/model/LoggedInUser.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
+@@ -1,23 +0,0 @@
+-package com.example.healthcoaches.data.model;
+-
+-/**
+- * Data class that captures user information for logged in users retrieved from LoginRepository
+- */
+-public class LoggedInUser {
+-
+-    private String userId;
+-    private String displayName;
+-
+-    public LoggedInUser(String userId, String displayName) {
+-        this.userId = userId;
+-        this.displayName = displayName;
+-    }
+-
+-    public String getUserId() {
+-        return userId;
+-    }
+-
+-    public String getDisplayName() {
+-        return displayName;
+-    }
+-}
+\ No newline at end of file
+Index: app/src/main/java/com/example/healthcoaches/ui/login/LoginViewModel.java
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/ui/login/LoginViewModel.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/ui/login/LoginViewModel.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
+@@ -1,70 +0,0 @@
+-package com.example.healthcoaches.ui.login;
+-
+-import androidx.lifecycle.LiveData;
+-import androidx.lifecycle.MutableLiveData;
+-import androidx.lifecycle.ViewModel;
+-
+-import android.util.Patterns;
+-
+-import com.example.healthcoaches.data.LoginRepository;
+-import com.example.healthcoaches.data.Result;
+-import com.example.healthcoaches.data.model.LoggedInUser;
+-import com.example.healthcoaches.R;
+-
+-public class LoginViewModel extends ViewModel {
+-
+-    private MutableLiveData<LoginFormState> loginFormState = new MutableLiveData<>();
+-    private MutableLiveData<LoginResult> loginResult = new MutableLiveData<>();
+-    private LoginRepository loginRepository;
+-
+-    LoginViewModel(LoginRepository loginRepository) {
+-        this.loginRepository = loginRepository;
+-    }
+-
+-    LiveData<LoginFormState> getLoginFormState() {
+-        return loginFormState;
+-    }
+-
+-    LiveData<LoginResult> getLoginResult() {
+-        return loginResult;
+-    }
+-
+-    public void login(String username, String password) {
+-        // can be launched in a separate asynchronous job
+-        Result<LoggedInUser> result = loginRepository.login(username, password);
+-
+-        if (result instanceof Result.Success) {
+-            LoggedInUser data = ((Result.Success<LoggedInUser>) result).getData();
+-            loginResult.setValue(new LoginResult(new LoggedInUserView(data.getDisplayName())));
+-        } else {
+-            loginResult.setValue(new LoginResult(R.string.login_failed));
+-        }
+-    }
+-
+-    public void loginDataChanged(String username, String password) {
+-        if (!isUserNameValid(username)) {
+-            loginFormState.setValue(new LoginFormState(R.string.invalid_username, null));
+-        } else if (!isPasswordValid(password)) {
+-            loginFormState.setValue(new LoginFormState(null, R.string.invalid_password));
+-        } else {
+-            loginFormState.setValue(new LoginFormState(true));
+-        }
+-    }
+-
+-    // A placeholder username validation check
+-    private boolean isUserNameValid(String username) {
+-        if (username == null) {
+-            return false;
+-        }
+-        if (username.contains("@")) {
+-            return Patterns.EMAIL_ADDRESS.matcher(username).matches();
+-        } else {
+-            return !username.trim().isEmpty();
+-        }
+-    }
+-
+-    // A placeholder password validation check
+-    private boolean isPasswordValid(String password) {
+-        return password != null && password.trim().length() > 5;
+-    }
+-}
+\ No newline at end of file
+Index: app/src/main/java/com/example/healthcoaches/ui/login/LoginActivity.java
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/ui/login/LoginActivity.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/ui/login/LoginActivity.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
+@@ -1,148 +0,0 @@
+-package com.example.healthcoaches.ui.login;
+-
+-import android.app.Activity;
+-
+-import androidx.lifecycle.Observer;
+-import androidx.lifecycle.ViewModelProviders;
+-
+-import android.content.Intent;
+-import android.os.Bundle;
+-
+-import androidx.annotation.Nullable;
+-import androidx.annotation.StringRes;
+-import androidx.appcompat.app.AppCompatActivity;
+-
+-import android.text.Editable;
+-import android.text.TextWatcher;
+-import android.view.KeyEvent;
+-import android.view.View;
+-import android.view.inputmethod.EditorInfo;
+-import android.widget.Button;
+-import android.widget.EditText;
+-import android.widget.ProgressBar;
+-import android.widget.TextView;
+-import android.widget.Toast;
+-
+-import com.example.healthcoaches.MainActivity;
+-import com.example.healthcoaches.R;
+-import com.example.healthcoaches.SignUpActivity;
+-import com.example.healthcoaches.ui.login.LoginViewModel;
+-import com.example.healthcoaches.ui.login.LoginViewModelFactory;
+-import com.google.firebase.database.DatabaseReference;
+-import com.google.firebase.database.FirebaseDatabase;
+-
+-public class LoginActivity extends AppCompatActivity {
+-
+-    private LoginViewModel loginViewModel;
+-
+-    FirebaseDatabase database = FirebaseDatabase.getInstance();
+-    DatabaseReference myRef = database.getReference("message");
+-
+-    @Override
+-    public void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        setContentView(R.layout.activity_login);
+-        loginViewModel = ViewModelProviders.of(this, new LoginViewModelFactory())
+-                .get(LoginViewModel.class);
+-
+-        final EditText usernameEditText = findViewById(R.id.username);
+-        final EditText passwordEditText = findViewById(R.id.password);
+-        final Button loginButton = findViewById(R.id.login);
+-        final ProgressBar loadingProgressBar = findViewById(R.id.loading);
+-
+-        loginViewModel.getLoginFormState().observe(this, new Observer<LoginFormState>() {
+-            @Override
+-            public void onChanged(@Nullable LoginFormState loginFormState) {
+-                if (loginFormState == null) {
+-                    return;
+-                }
+-                loginButton.setEnabled(loginFormState.isDataValid());
+-                if (loginFormState.getUsernameError() != null) {
+-                    usernameEditText.setError(getString(loginFormState.getUsernameError()));
+-                }
+-                if (loginFormState.getPasswordError() != null) {
+-                    passwordEditText.setError(getString(loginFormState.getPasswordError()));
+-                }
+-            }
+-        });
+-
+-        loginViewModel.getLoginResult().observe(this, new Observer<LoginResult>() {
+-            @Override
+-            public void onChanged(@Nullable LoginResult loginResult) {
+-                if (loginResult == null) {
+-                    return;
+-                }
+-                loadingProgressBar.setVisibility(View.GONE);
+-                if (loginResult.getError() != null) {
+-                    showLoginFailed(loginResult.getError());
+-                }
+-                if (loginResult.getSuccess() != null) {
+-                    updateUiWithUser(loginResult.getSuccess());
+-                }
+-                setResult(Activity.RESULT_OK);
+-
+-                //Complete and destroy login activity once successful
+-                finish();
+-            }
+-        });
+-
+-        TextWatcher afterTextChangedListener = new TextWatcher() {
+-            @Override
+-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+-                // ignore
+-            }
+-
+-            @Override
+-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+-                // ignore
+-            }
+-
+-            @Override
+-            public void afterTextChanged(Editable s) {
+-                loginViewModel.loginDataChanged(usernameEditText.getText().toString(),
+-                        passwordEditText.getText().toString());
+-            }
+-        };
+-        usernameEditText.addTextChangedListener(afterTextChangedListener);
+-        passwordEditText.addTextChangedListener(afterTextChangedListener);
+-        passwordEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+-
+-            @Override
+-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+-                if (actionId == EditorInfo.IME_ACTION_DONE) {
+-                    loginViewModel.login(usernameEditText.getText().toString(),
+-                            passwordEditText.getText().toString());
+-                }
+-                return false;
+-            }
+-        });
+-
+-        /*loginButton.setOnClickListener(new View.OnClickListener() {
+-            @Override
+-            public void onClick(View v) {
+-                loadingProgressBar.setVisibility(View.VISIBLE);
+-                loginViewModel.login(usernameEditText.getText().toString(),
+-                        passwordEditText.getText().toString());
+-            }
+-        });*/
+-
+-        Button testLogin = findViewById(R.id.testLogin);
+-        testLogin.setOnClickListener(new View.OnClickListener() {
+-            @Override
+-            public void onClick(View view) {
+-                Intent testLoginIntent= new Intent(getApplicationContext(), MainActivity.class);
+-                startActivity(testLoginIntent);
+-            }
+-        });
+-    }
+-
+-    private void updateUiWithUser(LoggedInUserView model) {
+-        String welcome = getString(R.string.welcome) + model.getDisplayName();
+-        // TODO : initiate successful logged in experience
+-        Toast.makeText(getApplicationContext(), welcome, Toast.LENGTH_LONG).show();
+-    }
+-
+-    private void showLoginFailed(@StringRes Integer errorString) {
+-        Toast.makeText(getApplicationContext(), errorString, Toast.LENGTH_SHORT).show();
+-    }
+-}
+\ No newline at end of file
+Index: app/src/main/java/com/example/healthcoaches/data/LoginRepository.java
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/data/LoginRepository.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/data/LoginRepository.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
+@@ -1,54 +0,0 @@
+-package com.example.healthcoaches.data;
+-
+-import com.example.healthcoaches.data.model.LoggedInUser;
+-
+-/**
+- * Class that requests authentication and user information from the remote data source and
+- * maintains an in-memory cache of login status and user credentials information.
+- */
+-public class LoginRepository {
+-
+-    private static volatile LoginRepository instance;
+-
+-    private LoginDataSource dataSource;
+-
+-    // If user credentials will be cached in local storage, it is recommended it be encrypted
+-    // @see https://developer.android.com/training/articles/keystore
+-    private LoggedInUser user = null;
+-
+-    // private constructor : singleton access
+-    private LoginRepository(LoginDataSource dataSource) {
+-        this.dataSource = dataSource;
+-    }
+-
+-    public static LoginRepository getInstance(LoginDataSource dataSource) {
+-        if (instance == null) {
+-            instance = new LoginRepository(dataSource);
+-        }
+-        return instance;
+-    }
+-
+-    public boolean isLoggedIn() {
+-        return user != null;
+-    }
+-
+-    public void logout() {
+-        user = null;
+-        dataSource.logout();
+-    }
+-
+-    private void setLoggedInUser(LoggedInUser user) {
+-        this.user = user;
+-        // If user credentials will be cached in local storage, it is recommended it be encrypted
+-        // @see https://developer.android.com/training/articles/keystore
+-    }
+-
+-    public Result<LoggedInUser> login(String username, String password) {
+-        // handle login
+-        Result<LoggedInUser> result = dataSource.login(username, password);
+-        if (result instanceof Result.Success) {
+-            setLoggedInUser(((Result.Success<LoggedInUser>) result).getData());
+-        }
+-        return result;
+-    }
+-}
+\ No newline at end of file
+Index: app/src/main/java/com/example/healthcoaches/data/LoginDataSource.java
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/data/LoginDataSource.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/data/LoginDataSource.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
+@@ -1,29 +0,0 @@
+-package com.example.healthcoaches.data;
+-
+-import com.example.healthcoaches.data.model.LoggedInUser;
+-
+-import java.io.IOException;
+-
+-/**
+- * Class that handles authentication w/ login credentials and retrieves user information.
+- */
+-public class LoginDataSource {
+-
+-    public Result<LoggedInUser> login(String username, String password) {
+-
+-        try {
+-            // TODO: handle loggedInUser authentication
+-            LoggedInUser fakeUser =
+-                    new LoggedInUser(
+-                            java.util.UUID.randomUUID().toString(),
+-                            "Jane Doe");
+-            return new Result.Success<>(fakeUser);
+-        } catch (Exception e) {
+-            return new Result.Error(new IOException("Error logging in", e));
+-        }
+-    }
+-
+-    public void logout() {
+-        // TODO: revoke authentication
+-    }
+-}
+\ No newline at end of file
+Index: app/src/main/res/layout/activity_login.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/activity_login.xml	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/res/layout/activity_login.xml	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
+@@ -1,89 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-    xmlns:app="http://schemas.android.com/apk/res-auto"
+-    xmlns:tools="http://schemas.android.com/tools"
+-    android:id="@+id/container"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent"
+-    android:paddingLeft="@dimen/activity_horizontal_margin"
+-    android:paddingTop="@dimen/activity_vertical_margin"
+-    android:paddingRight="@dimen/activity_horizontal_margin"
+-    android:paddingBottom="@dimen/activity_vertical_margin"
+-    android:background="#A7F6C6"
+-    tools:context=".ui.login.LoginActivity">
+-
+-    <Button
+-        android:id="@+id/login"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:layout_gravity="start"
+-        android:layout_marginStart="48dp"
+-        android:layout_marginTop="16dp"
+-        android:layout_marginEnd="48dp"
+-        android:layout_marginBottom="64dp"
+-        android:enabled="false"
+-        android:text="Login"
+-        android:visibility="invisible"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/password"
+-        app:layout_constraintVertical_bias="0.2" />
+-
+-    <EditText
+-        android:id="@+id/password"
+-        android:layout_width="0dp"
+-        android:layout_height="wrap_content"
+-        android:layout_marginStart="24dp"
+-        android:layout_marginTop="8dp"
+-        android:layout_marginEnd="24dp"
+-        android:autofillHints="@string/prompt_password"
+-        android:hint="@string/prompt_password"
+-        android:imeActionLabel="@string/action_sign_in_short"
+-        android:imeOptions="actionDone"
+-        android:inputType="textPassword"
+-        android:selectAllOnFocus="true"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/username" />
+-
+-    <EditText
+-        android:id="@+id/username"
+-        android:layout_width="0dp"
+-        android:layout_height="wrap_content"
+-        android:layout_marginStart="24dp"
+-        android:layout_marginTop="96dp"
+-        android:layout_marginEnd="24dp"
+-        android:autofillHints="@string/prompt_email"
+-        android:hint="username"
+-        android:inputType="textEmailAddress"
+-        android:selectAllOnFocus="true"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toTopOf="parent" />
+-
+-    <ProgressBar
+-        android:id="@+id/loading"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:layout_gravity="center"
+-        android:layout_marginStart="32dp"
+-        android:layout_marginTop="64dp"
+-        android:layout_marginEnd="32dp"
+-        android:layout_marginBottom="64dp"
+-        android:visibility="gone"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintEnd_toEndOf="@+id/password"
+-        app:layout_constraintStart_toStartOf="@+id/password"
+-        app:layout_constraintTop_toTopOf="parent"
+-        app:layout_constraintVertical_bias="0.3" />
+-
+-    <Button
+-        android:id="@+id/testLogin"
+-        android:layout_width="113dp"
+-        android:layout_height="58dp"
+-        android:text="Login"
+-        android:visibility="visible"
+-        tools:layout_editor_absoluteX="130dp"
+-        tools:layout_editor_absoluteY="374dp" />
+-</androidx.constraintlayout.widget.ConstraintLayout>
+\ No newline at end of file
+Index: app/src/main/java/com/example/healthcoaches/ui/login/LoginViewModelFactory.java
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/ui/login/LoginViewModelFactory.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/ui/login/LoginViewModelFactory.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
+@@ -1,26 +0,0 @@
+-package com.example.healthcoaches.ui.login;
+-
+-import androidx.lifecycle.ViewModel;
+-import androidx.lifecycle.ViewModelProvider;
+-import androidx.annotation.NonNull;
+-
+-import com.example.healthcoaches.data.LoginDataSource;
+-import com.example.healthcoaches.data.LoginRepository;
+-
+-/**
+- * ViewModel provider factory to instantiate LoginViewModel.
+- * Required given LoginViewModel has a non-empty constructor
+- */
+-public class LoginViewModelFactory implements ViewModelProvider.Factory {
+-
+-    @NonNull
+-    @Override
+-    @SuppressWarnings("unchecked")
+-    public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
+-        if (modelClass.isAssignableFrom(LoginViewModel.class)) {
+-            return (T) new LoginViewModel(LoginRepository.getInstance(new LoginDataSource()));
+-        } else {
+-            throw new IllegalArgumentException("Unknown ViewModel class");
+-        }
+-    }
+-}
+\ No newline at end of file
+Index: app/src/main/java/com/example/healthcoaches/data/Result.java
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/data/Result.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/data/Result.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
+@@ -1,48 +0,0 @@
+-package com.example.healthcoaches.data;
+-
+-/**
+- * A generic class that holds a result success w/ data or an error exception.
+- */
+-public class Result<T> {
+-    // hide the private constructor to limit subclass types (Success, Error)
+-    private Result() {
+-    }
+-
+-    @Override
+-    public String toString() {
+-        if (this instanceof Result.Success) {
+-            Result.Success success = (Result.Success) this;
+-            return "Success[data=" + success.getData().toString() + "]";
+-        } else if (this instanceof Result.Error) {
+-            Result.Error error = (Result.Error) this;
+-            return "Error[exception=" + error.getError().toString() + "]";
+-        }
+-        return "";
+-    }
+-
+-    // Success sub-class
+-    public final static class Success<T> extends Result {
+-        private T data;
+-
+-        public Success(T data) {
+-            this.data = data;
+-        }
+-
+-        public T getData() {
+-            return this.data;
+-        }
+-    }
+-
+-    // Error sub-class
+-    public final static class Error extends Result {
+-        private Exception error;
+-
+-        public Error(Exception error) {
+-            this.error = error;
+-        }
+-
+-        public Exception getError() {
+-            return this.error;
+-        }
+-    }
+-}
+\ No newline at end of file
+Index: app/src/main/java/com/example/healthcoaches/BioInfoActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.healthcoaches;\r\n\r\nimport androidx.appcompat.app.AppCompatActivity;\r\n\r\nimport android.content.Intent;\r\nimport android.os.Bundle;\r\nimport android.view.View;\r\nimport android.widget.Button;\r\nimport android.widget.EditText;\r\nimport android.widget.RadioGroup;\r\n\r\npublic class BioInfoActivity extends AppCompatActivity {\r\n\r\n    private EditText Weight = findViewById(R.id.edtWeight);\r\n    private EditText Height = findViewById(R.id.edtHeight);\r\n    private EditText Age = findViewById(R.id.edtAge);\r\n    private EditText WeightGoal = findViewById(R.id.edtWeightGoal);\r\n    private RadioGroup FoodPReference = findViewById(R.id.rgbFoodPreference);\r\n\r\n\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_bio_info);\r\n\r\n        String weight;\r\n        String height;\r\n        String age;\r\n        String weightGoal;\r\n        int foodPreference;\r\n        String foodPreferenceS;\r\n       weight = Weight.getEditableText().toString();\r\n       height = Height.getEditableText().toString();\r\n       age = Age.getEditableText().toString();\r\n       weightGoal = WeightGoal.getEditableText().toString();\r\n       foodPreference = FoodPReference.getCheckedRadioButtonId();\r\n\r\n        switch (foodPreference) {\r\n            case 0:\r\n                foodPreferenceS = \"Vegetarian\";\r\n                break;\r\n            case 1:\r\n                foodPreferenceS = \"Vegan\";\r\n                break;\r\n            case 2:\r\n                foodPreferenceS = \"Pescatarian\";\r\n                break;\r\n            case 3:\r\n                foodPreferenceS = \"No Preference\";\r\n                break;\r\n        }\r\n\r\n        Button bioInfoSubmit = findViewById(R.id.btnBioInfoSubmit);\r\n        bioInfoSubmit.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                Intent bioInfoIntent= new Intent(getApplicationContext(), MainActivity.class);\r\n                startActivity(bioInfoIntent);\r\n            }\r\n        });\r\n    }\r\n    }\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/BioInfoActivity.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/BioInfoActivity.java	(date 1606235633585)
+@@ -9,6 +9,11 @@
+ import android.widget.EditText;
+ import android.widget.RadioGroup;
+ 
++import com.example.healthcoaches.objectClasses.BioInfo;
++import com.example.healthcoaches.objectClasses.User;
++import com.google.firebase.database.DatabaseReference;
++import com.google.firebase.database.FirebaseDatabase;
++
+ public class BioInfoActivity extends AppCompatActivity {
+ 
+     private EditText Weight = findViewById(R.id.edtWeight);
+@@ -17,6 +22,8 @@
+     private EditText WeightGoal = findViewById(R.id.edtWeightGoal);
+     private RadioGroup FoodPReference = findViewById(R.id.rgbFoodPreference);
+ 
++    User user = new User();
++    FirebaseDatabase database = FirebaseDatabase.getInstance();
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+@@ -27,6 +34,7 @@
+         String height;
+         String age;
+         String weightGoal;
++        String username;
+         int foodPreference;
+         String foodPreferenceS;
+        weight = Weight.getEditableText().toString();
+@@ -48,7 +56,21 @@
+             case 3:
+                 foodPreferenceS = "No Preference";
+                 break;
++            default:
++                throw new IllegalStateException("Unexpected value: " + foodPreference);
+         }
++        username = user.username;
++
++        BioInfo bioInfo = new BioInfo(weight, height, age, weightGoal, foodPreferenceS, username);
++
++        //Getting Instance of Firebase realtime database
++        FirebaseDatabase databaseInstance = FirebaseDatabase.getInstance();
++
++        //Getting Reference to a User node
++        DatabaseReference userNode = database.getReference("BiologicalInfo");
++
++        //Writing the User class object to that reference
++        userNode.setValue(bioInfo);
+ 
+         Button bioInfoSubmit = findViewById(R.id.btnBioInfoSubmit);
+         bioInfoSubmit.setOnClickListener(new View.OnClickListener() {
+Index: app/src/main/res/values/strings.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><resources>\r\n    <string name=\"app_name\">Health Coaches App</string>\r\n    <string name=\"title_activity_login\">LoginActivity</string>\r\n    <string name=\"prompt_email\">Email</string>\r\n    <string name=\"prompt_password\">Password</string>\r\n    <string name=\"action_sign_in\">Sign in or register</string>\r\n    <string name=\"action_sign_in_short\">Sign in</string>\r\n    <string name=\"welcome\">\"Welcome !\"</string>\r\n    <string name=\"invalid_username\">Not a valid username</string>\r\n    <string name=\"invalid_password\">Password must be >5 characters</string>\r\n    <string name=\"login_failed\">\"Login failed\"</string>\r\n    <string name=\"challenge_success\">Well Done! You completed your Daily Challenge! Keep it up tomorrow!</string>\r\n    <string name=\"openNavDrawer\">Navigation Drawer Open</string>\r\n    <string name=\"closeNavDrawer\">Navigation Drawer Close</string>\r\n    <string name=\"daily_challenge\">Don\\'t have any simple carbohydrates the whole day</string>\r\n    <!-- TODO: Remove or change this placeholder text -->\r\n    <string name=\"hello_blank_fragment\">Hello blank fragment</string>\r\n</resources>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/values/strings.xml	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/res/values/strings.xml	(date 1606299389449)
+@@ -1,5 +1,5 @@
+ <resources>
+-    <string name="app_name">Health Coaches App</string>
++    <string name="app_name">Health Coaches</string>
+     <string name="title_activity_login">LoginActivity</string>
+     <string name="prompt_email">Email</string>
+     <string name="prompt_password">Password</string>
+Index: app/src/main/java/com/example/healthcoaches/BloodSugarBalancingActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.healthcoaches;\r\n\r\nimport androidx.annotation.NonNull;\r\nimport androidx.appcompat.app.ActionBarDrawerToggle;\r\nimport androidx.appcompat.app.AppCompatActivity;\r\nimport androidx.appcompat.widget.Toolbar;\r\nimport androidx.drawerlayout.widget.DrawerLayout;\r\n\r\nimport android.os.Bundle;\r\nimport android.view.MenuItem;\r\n\r\nimport com.google.android.material.navigation.NavigationView;\r\n\r\npublic class BloodSugarBalancingActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {\r\n\r\n    private Toolbar toolbar;\r\n    private DrawerLayout drawerLayout;\r\n    private NavigationView navigationView;\r\n\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_blood_sugar_balancing);\r\n\r\n        toolbar = findViewById(R.id.bsb_main_toolbar);\r\n        setSupportActionBar(toolbar);\r\n\r\n        drawerLayout = findViewById(R.id.bsb_drawer_layout);\r\n        navigationView = findViewById(R.id.bsb_nav_view);\r\n\r\n        ActionBarDrawerToggle actionBarDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.openNavDrawer, R.string.closeNavDrawer);\r\n\r\n        drawerLayout.addDrawerListener(actionBarDrawerToggle);\r\n        actionBarDrawerToggle.syncState();\r\n        navigationView.setNavigationItemSelectedListener(this);\r\n    }\r\n\r\n    @Override\r\n    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {\r\n        return false;\r\n    }\r\n\r\n    @Override\r\n    public void onPointerCaptureChanged(boolean hasCapture) {\r\n\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/BloodSugarBalancingActivity.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/BloodSugarBalancingActivity.java	(date 1606326120114)
+@@ -6,22 +6,29 @@
+ import androidx.appcompat.widget.Toolbar;
+ import androidx.drawerlayout.widget.DrawerLayout;
+ 
++import android.content.Intent;
+ import android.os.Bundle;
+ import android.view.MenuItem;
++import android.view.View;
++import android.widget.Button;
+ 
+ import com.google.android.material.navigation.NavigationView;
+ 
+ public class BloodSugarBalancingActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+ 
+-    private Toolbar toolbar;
+-    private DrawerLayout drawerLayout;
+-    private NavigationView navigationView;
++
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+         super.onCreate(savedInstanceState);
+         setContentView(R.layout.activity_blood_sugar_balancing);
+ 
++         Toolbar toolbar;
++         DrawerLayout drawerLayout;
++         NavigationView navigationView;
++         Button bsbNext = findViewById(R.id.btnbsbNext);
++
++
+         toolbar = findViewById(R.id.bsb_main_toolbar);
+         setSupportActionBar(toolbar);
+ 
+@@ -33,6 +40,14 @@
+         drawerLayout.addDrawerListener(actionBarDrawerToggle);
+         actionBarDrawerToggle.syncState();
+         navigationView.setNavigationItemSelectedListener(this);
++
++        bsbNext.setOnClickListener(new View.OnClickListener() {
++            @Override
++            public void onClick(View view) {
++                Intent bsbNextIntent = new Intent(getApplicationContext(), BsbNext.class);
++                startActivity(bsbNextIntent);
++            }
++        });
+     }
+ 
+     @Override
+Index: gradle/wrapper/gradle-wrapper.properties
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#Tue Oct 27 13:38:39 CAT 2020\r\ndistributionBase=GRADLE_USER_HOME\r\ndistributionPath=wrapper/dists\r\nzipStoreBase=GRADLE_USER_HOME\r\nzipStorePath=wrapper/dists\r\ndistributionUrl=https\\://services.gradle.org/distributions/gradle-6.1.1-all.zip\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>windows-1252
+===================================================================
+--- gradle/wrapper/gradle-wrapper.properties	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ gradle/wrapper/gradle-wrapper.properties	(date 1606222663963)
+@@ -1,6 +1,6 @@
+-#Tue Oct 27 13:38:39 CAT 2020
++#Tue Nov 24 14:57:43 CAT 2020
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-6.1.1-all.zip
++distributionUrl=https\://services.gradle.org/distributions/gradle-6.5-bin.zip
+Index: app/src/main/java/com/example/healthcoaches/DailyLogActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.healthcoaches;\r\n\r\nimport androidx.annotation.NonNull;\r\nimport androidx.appcompat.app.ActionBarDrawerToggle;\r\nimport androidx.appcompat.app.AppCompatActivity;\r\nimport androidx.appcompat.widget.Toolbar;\r\nimport androidx.drawerlayout.widget.DrawerLayout;\r\n\r\nimport android.os.Bundle;\r\nimport android.text.format.DateFormat;\r\nimport android.view.MenuItem;\r\nimport android.widget.TextView;\r\n\r\nimport com.google.android.material.navigation.NavigationView;\r\n\r\nimport java.text.SimpleDateFormat;\r\nimport java.util.Calendar;\r\n\r\npublic class DailyLogActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {\r\n\r\n    private Toolbar toolbar;\r\n    private DrawerLayout drawerLayout;\r\n    private NavigationView navigationView;\r\n    private TextView displayDate;\r\n    private Calendar calendar;\r\n    private SimpleDateFormat dateFormat;\r\n    private String date;\r\n\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_daily_log);\r\n\r\n        toolbar = findViewById(R.id.daily_log_main_toolbar);\r\n        setSupportActionBar(toolbar);\r\n\r\n        drawerLayout = findViewById(R.id.daily_log_drawer_layout);\r\n        navigationView = findViewById(R.id.daily_log_nav_view);\r\n        displayDate = findViewById(R.id.tvDateDisplay);\r\n\r\n        ActionBarDrawerToggle actionBarDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.openNavDrawer, R.string.closeNavDrawer);\r\n\r\n        drawerLayout.addDrawerListener(actionBarDrawerToggle);\r\n        actionBarDrawerToggle.syncState();\r\n        navigationView.setNavigationItemSelectedListener(this);\r\n\r\n        calendar = Calendar.getInstance();\r\n        dateFormat = new SimpleDateFormat(\"MM/dd/yyyy\");\r\n        SimpleDateFormat simpleDateFormat = new SimpleDateFormat();\r\n        date = simpleDateFormat.format(calendar.getTime());\r\n        displayDate.setText(date);\r\n\r\n    }\r\n\r\n    @Override\r\n    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {\r\n        return false;\r\n    }\r\n\r\n    @Override\r\n    public void onPointerCaptureChanged(boolean hasCapture) {\r\n\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/DailyLogActivity.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/DailyLogActivity.java	(date 1606336013348)
+@@ -6,9 +6,17 @@
+ import androidx.appcompat.widget.Toolbar;
+ import androidx.drawerlayout.widget.DrawerLayout;
+ 
++import com.example.healthcoaches.objectClasses.DailyLog;
++import com.example.healthcoaches.objectClasses.User;
++import com.google.firebase.database.DatabaseReference;
++import com.google.firebase.database.FirebaseDatabase;
++
+ import android.os.Bundle;
+ import android.text.format.DateFormat;
+ import android.view.MenuItem;
++import android.view.View;
++import android.widget.Button;
++import android.widget.EditText;
+ import android.widget.TextView;
+ 
+ import com.google.android.material.navigation.NavigationView;
+@@ -18,19 +26,24 @@
+ 
+ public class DailyLogActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+ 
+-    private Toolbar toolbar;
+-    private DrawerLayout drawerLayout;
+-    private NavigationView navigationView;
+-    private TextView displayDate;
+-    private Calendar calendar;
+-    private SimpleDateFormat dateFormat;
+-    private String date;
++    User user = new User();
++    FirebaseDatabase database = FirebaseDatabase.getInstance();
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+         super.onCreate(savedInstanceState);
+         setContentView(R.layout.activity_daily_log);
+ 
++         Toolbar toolbar;
++         DrawerLayout drawerLayout;
++         NavigationView navigationView;
++         TextView displayDate;
++         Calendar calendar;
++         SimpleDateFormat dateFormat;
++         String date;
++         EditText WeightLog = findViewById(R.id.edtWeightLog);
++         Button logSubmit = findViewById(R.id.btnDailyLogSubmit);
++
+         toolbar = findViewById(R.id.daily_log_main_toolbar);
+         setSupportActionBar(toolbar);
+ 
+@@ -50,7 +63,28 @@
+         date = simpleDateFormat.format(calendar.getTime());
+         displayDate.setText(date);
+ 
+-    }
++        String weightLog;
++        String username;
++
++        weightLog = WeightLog.getEditableText().toString();
++        username = user.username;
++
++        final DailyLog dailyLog = new DailyLog(date, weightLog, username);
++
++        //Getting Instance of Firebase realtime database
++        FirebaseDatabase databaseInstance = FirebaseDatabase.getInstance();
++
++        //Getting Reference to a Log node
++        final DatabaseReference logNode = database.getReference("WeightLog");
++
++        logSubmit.setOnClickListener(new View.OnClickListener() {
++            @Override
++            public void onClick(View view) {
++                //Writing the Log class object to that reference
++                logNode.setValue(dailyLog);
++            }
++        });
++        }
+ 
+     @Override
+     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+Index: app/src/main/java/com/example/healthcoaches/SettingsFragment.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.healthcoaches;\r\n\r\nimport android.os.Bundle;\r\n\r\nimport androidx.fragment.app.Fragment;\r\n\r\nimport android.view.LayoutInflater;\r\nimport android.view.View;\r\nimport android.view.ViewGroup;\r\n\r\n/**\r\n * A simple {@link Fragment} subclass.\r\n * Use the {@link SettingsFragment#newInstance} factory method to\r\n * create an instance of this fragment.\r\n */\r\npublic class SettingsFragment extends  androidx.fragment.app.Fragment {\r\n\r\n\r\n\r\n\r\n\r\n    public SettingsFragment() {\r\n        // Required empty public constructor\r\n    }\r\n\r\n    /**\r\n     * Use this factory method to create a new instance of\r\n     * this fragment using the provided parameters.\r\n     *\r\n     * @param param1 Parameter 1.\r\n     * @param param2 Parameter 2.\r\n     * @return A new instance of fragment SettingsFragment.\r\n     */\r\n    // TODO: Rename and change types and number of parameters\r\n    public static SettingsFragment newInstance(String param1, String param2) {\r\n        SettingsFragment fragment = new SettingsFragment();\r\n        Bundle args = new Bundle();\r\n        fragment.setArguments(args);\r\n        return fragment;\r\n    }\r\n\r\n    @Override\r\n    public void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        if (getArguments() != null) {\r\n\r\n        }\r\n    }\r\n\r\n    @Override\r\n    public View onCreateView(LayoutInflater inflater, ViewGroup container,\r\n                             Bundle savedInstanceState) {\r\n        // Inflate the layout for this fragment\r\n        return inflater.inflate(R.layout.fragment_settings, container, false);\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/SettingsFragment.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/SettingsFragment.java	(date 1606316548659)
+@@ -1,49 +1,38 @@
+ package com.example.healthcoaches;
+ 
++import android.content.DialogInterface;
+ import android.os.Bundle;
+-
++import androidx.annotation.NonNull;
++import androidx.appcompat.app.AppCompatActivity;
+ import androidx.fragment.app.Fragment;
+ 
+ import android.view.LayoutInflater;
+ import android.view.View;
+ import android.view.ViewGroup;
+-
+-/**
+- * A simple {@link Fragment} subclass.
+- * Use the {@link SettingsFragment#newInstance} factory method to
+- * create an instance of this fragment.
+- */
+-public class SettingsFragment extends  androidx.fragment.app.Fragment {
++import android.widget.RadioButton;
+ 
++public class SettingsFragment extends  androidx.fragment.app.Fragment implements View.OnClickListener {
+ 
+ 
++    public View onCreate(LayoutInflater inflater, ViewGroup container,
++                         Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        View v = inflater.inflate(R.layout.fragment_settings, container, false);
+ 
+-
+-    public SettingsFragment() {
+-        // Required empty public constructor
+-    }
+-
+-    /**
+-     * Use this factory method to create a new instance of
+-     * this fragment using the provided parameters.
+-     *
+-     * @param param1 Parameter 1.
+-     * @param param2 Parameter 2.
+-     * @return A new instance of fragment SettingsFragment.
+-     */
+-    // TODO: Rename and change types and number of parameters
+-    public static SettingsFragment newInstance(String param1, String param2) {
+-        SettingsFragment fragment = new SettingsFragment();
+-        Bundle args = new Bundle();
+-        fragment.setArguments(args);
+-        return fragment;
++        RadioButton b = (RadioButton) v.findViewById(R.id.rbtnMetricSystem);
++        RadioButton c = (RadioButton) v.findViewById(R.id.rtbnImperialSystem);
++        b.setOnClickListener(this);
++        c.setOnClickListener(this);
++        return v;
+     }
+ 
+     @Override
+-    public void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        if (getArguments() != null) {
++    public void onClick(View v) {
++        switch (v.getId()) {
++            case R.id.rbtnMetricSystem:
+ 
++
++                break;
+         }
+     }
+ 
+@@ -53,4 +42,8 @@
+         // Inflate the layout for this fragment
+         return inflater.inflate(R.layout.fragment_settings, container, false);
+     }
+-}
+\ No newline at end of file
++
++    public SettingsFragment() {
++        // Required empty public constructor
++    }
++}
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"ProjectRootManager\" version=\"2\" languageLevel=\"JDK_1_7\" project-jdk-name=\"1.8\" project-jdk-type=\"JavaSDK\">\r\n    <output url=\"file://$PROJECT_DIR$/build/classes\" />\r\n  </component>\r\n  <component name=\"ProjectType\">\r\n    <option name=\"id\" value=\"Android\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/misc.xml	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ .idea/misc.xml	(date 1606222629109)
+@@ -1,6 +1,6 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
+-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_7" project-jdk-name="1.8" project-jdk-type="JavaSDK">
++  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" default="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
+     <output url="file://$PROJECT_DIR$/build/classes" />
+   </component>
+   <component name="ProjectType">
+Index: build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>// Top-level build file where you can add configuration options common to all sub-projects/modules.\r\nbuildscript {\r\n    repositories {\r\n        google()\r\n        jcenter()\r\n    }\r\n    dependencies {\r\n        classpath \"com.android.tools.build:gradle:4.0.1\"\r\n        classpath 'com.google.gms:google-services:4.3.3'\r\n\r\n        // NOTE: Do not place your application dependencies here; they belong\r\n        // in the individual module build.gradle files\r\n    }\r\n}\r\n\r\nallprojects {\r\n    repositories {\r\n        google()\r\n        jcenter()\r\n    }\r\n}\r\n\r\ntask clean(type: Delete) {\r\n    delete rootProject.buildDir\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- build.gradle	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ build.gradle	(date 1606222663882)
+@@ -5,7 +5,7 @@
+         jcenter()
+     }
+     dependencies {
+-        classpath "com.android.tools.build:gradle:4.0.1"
++        classpath 'com.android.tools.build:gradle:4.1.1'
+         classpath 'com.google.gms:google-services:4.3.3'
+ 
+         // NOTE: Do not place your application dependencies here; they belong
+Index: .idea/compiler.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/compiler.xml	(date 1606222629459)
++++ .idea/compiler.xml	(date 1606222629459)
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="CompilerConfiguration">
++    <bytecodeTargetLevel target="1.8" />
++  </component>
++</project>
+\ No newline at end of file
+Index: app/src/main/java/com/example/healthcoaches/LoginActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/LoginActivity.java	(date 1606336745946)
++++ app/src/main/java/com/example/healthcoaches/LoginActivity.java	(date 1606336745946)
+@@ -0,0 +1,85 @@
++package com.example.healthcoaches;
++
++import androidx.annotation.NonNull;
++import androidx.appcompat.app.AppCompatActivity;
++
++import android.content.Intent;
++import android.os.Bundle;
++import android.util.Log;
++import android.view.View;
++import android.widget.Button;
++import android.widget.EditText;
++import android.widget.Toast;
++
++import com.example.healthcoaches.objectClasses.User;
++import com.google.firebase.database.DataSnapshot;
++import com.google.firebase.database.DatabaseError;
++import com.google.firebase.database.DatabaseReference;
++import com.google.firebase.database.FirebaseDatabase;
++import com.google.firebase.database.ValueEventListener;
++
++import java.util.Arrays;
++
++public class LoginActivity extends AppCompatActivity {
++    private String dbUsername;
++    private String dbPassword;
++    private String inUsername;
++    private String inPassword;
++    private static final String TAG = "";
++    FirebaseDatabase database = FirebaseDatabase.getInstance();
++
++    //Getting Reference to Root Node
++    DatabaseReference myRef = database.getReference("User");
++    User user = new User();
++
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_login);
++
++         EditText logUsername = findViewById(R.id.logUsername);
++         EditText logPassword = findViewById(R.id.logPassword);
++         Button logIn = findViewById(R.id.btnLogin);
++
++        inUsername = logUsername.getEditableText().toString();
++        inPassword = logPassword.getEditableText().toString();
++
++        logIn.setOnClickListener(new View.OnClickListener() {
++            @Override
++            public void onClick(View view) {
++                //Reading User Object from Firebase Realtime Database
++                myRef.addValueEventListener(new ValueEventListener() {
++                    @Override
++                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
++
++                        for (DataSnapshot data : dataSnapshot.getChildren()) {
++                            //Getting User object from dataSnapshot
++                            User user = data.getValue(User.class);
++                            assert user != null;
++                            user.getUsername();
++                            user.getPassword();
++
++                            if (inUsername.equals(user.ToString(user.getUsername())) && (inPassword.equals(user.ToString(user.getPassword())))) {
++                                Toast.makeText(LoginActivity.this, "Login successful!", Toast.LENGTH_SHORT).show();
++                                user.username = inUsername;
++                                Intent LoginIntent= new Intent(getApplicationContext(), MainActivity.class);
++                                startActivity(LoginIntent);
++                            }
++                            else {
++                                Toast.makeText(LoginActivity.this, "Login unsuccessful. Please check you username and/or password is correct and try again.", Toast.LENGTH_SHORT).show();
++                            }
++                        }
++                    }
++
++                    @Override
++                    public void onCancelled(@NonNull DatabaseError databaseError) {
++
++                        Log.i(TAG, "onCancelled: Error: " + databaseError.getMessage());
++
++                    }
++                });
++            }
++        });
++}
++}
+\ No newline at end of file
+Index: .idea/gradle.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"GradleMigrationSettings\" migrationVersion=\"1\" />\r\n  <component name=\"GradleSettings\">\r\n    <option name=\"linkedExternalProjectsSettings\">\r\n      <GradleProjectSettings>\r\n        <option name=\"testRunner\" value=\"PLATFORM\" />\r\n        <option name=\"distributionType\" value=\"DEFAULT_WRAPPED\" />\r\n        <option name=\"externalProjectPath\" value=\"$PROJECT_DIR$\" />\r\n        <option name=\"gradleJvm\" value=\"1.8\" />\r\n        <option name=\"modules\">\r\n          <set>\r\n            <option value=\"$PROJECT_DIR$\" />\r\n            <option value=\"$PROJECT_DIR$/app\" />\r\n          </set>\r\n        </option>\r\n        <option name=\"resolveModulePerSourceSet\" value=\"false\" />\r\n      </GradleProjectSettings>\r\n    </option>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/gradle.xml	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ .idea/gradle.xml	(date 1606222629498)
+@@ -15,6 +15,7 @@
+           </set>
+         </option>
+         <option name="resolveModulePerSourceSet" value="false" />
++        <option name="useQualifiedModuleNames" value="true" />
+       </GradleProjectSettings>
+     </option>
+   </component>
+Index: app/src/main/res/layout/activity_blood_sugar_balancing.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<androidx.drawerlayout.widget.DrawerLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\r\n    xmlns:tools=\"http://schemas.android.com/tools\"\r\n    android:layout_width=\"match_parent\"\r\n    android:layout_height=\"match_parent\"\r\n    tools:context=\".BloodSugarBalancingActivity\"\r\n    android:id=\"@+id/bsb_drawer_layout\">\r\n\r\n    <androidx.coordinatorlayout.widget.CoordinatorLayout\r\n        android:layout_height=\"match_parent\"\r\n        android:layout_width=\"match_parent\">\r\n\r\n        <com.google.android.material.appbar.AppBarLayout\r\n            android:layout_width=\"match_parent\"\r\n            android:layout_height=\"wrap_content\"\r\n            android:background=\"#A7F6C6\">\r\n\r\n            <androidx.appcompat.widget.Toolbar\r\n                android:id=\"@+id/bsb_main_toolbar\"\r\n                android:layout_width=\"match_parent\"\r\n                android:layout_height=\"match_parent\"\r\n                android:background=\"@android:color/white\">\r\n\r\n            </androidx.appcompat.widget.Toolbar>\r\n\r\n        </com.google.android.material.appbar.AppBarLayout>\r\n\r\n        <LinearLayout\r\n            android:layout_width=\"match_parent\"\r\n            android:layout_height=\"match_parent\"\r\n            android:layout_marginVertical=\"60dp\"\r\n            android:orientation=\"vertical\">\r\n        </LinearLayout>\r\n\r\n    </androidx.coordinatorlayout.widget.CoordinatorLayout>\r\n\r\n    <com.google.android.material.navigation.NavigationView\r\n        android:layout_width=\"wrap_content\"\r\n        android:layout_height=\"match_parent\"\r\n        android:layout_gravity=\"start\"\r\n        android:id=\"@+id/bsb_nav_view\"\r\n        app:menu=\"@menu/navigation_menu\" />\r\n\r\n\r\n</androidx.drawerlayout.widget.DrawerLayout>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/activity_blood_sugar_balancing.xml	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/res/layout/activity_blood_sugar_balancing.xml	(date 1606331849125)
+@@ -31,6 +31,47 @@
+             android:layout_height="match_parent"
+             android:layout_marginVertical="60dp"
+             android:orientation="vertical">
++
++        <TextView
++            android:id="@+id/tvGiInfo"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginVertical="10dp"
++            android:text="Glycaemic Index: Predicts how much glucose you will absorb from the food on a scale of 0 - 100 Calculated per individual food item in a lab."
++            android:textAlignment="center"
++            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
++            android:textSize="20sp"
++            android:visibility="visible" />
++
++            <TextView
++                android:id="@+id/tvGlInfo"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:layout_marginVertical="10dp"
++                android:text="Glycaemic Load: A measure of both the quality and quantity of the carbohydrate in the food on a scale of 0 - 60 calculated using the GI value and the carbohydrate content per portion. "
++                android:textAlignment="center"
++                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
++                android:textSize="20sp"
++                android:visibility="visible" />
++
++            <TextView
++                android:id="@+id/tvBsbInfo"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:layout_marginVertical="10dp"
++                android:text="Blood sugar balancing is important because you need it to manage your diet. Managing your diet will allow you to maintain your blood sugar levels to prevent drastic highs and lows, which contribute to Type 2 Diabetes and other medical issues."
++                android:textAlignment="center"
++                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
++                android:textSize="20sp"
++                android:visibility="visible" />
++
++            <Button
++                android:id="@+id/btnbsbNext"
++                android:layout_width="100dp"
++                android:layout_height="wrap_content"
++                android:layout_marginVertical="20dp"
++                android:layout_marginStart="160dp"
++                android:text="Next >" />
+         </LinearLayout>
+ 
+     </androidx.coordinatorlayout.widget.CoordinatorLayout>
+Index: app/src/main/res/layout/fragment_settings.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<FrameLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    xmlns:tools=\"http://schemas.android.com/tools\"\r\n    android:layout_width=\"match_parent\"\r\n    android:layout_height=\"match_parent\"\r\n    tools:context=\".SettingsFragment\">\r\n\r\n\r\n    <LinearLayout\r\n        android:layout_width=\"match_parent\"\r\n        android:layout_height=\"match_parent\"\r\n        android:orientation=\"vertical\">\r\n\r\n        <TextView\r\n            android:id=\"@+id/tvSettingsInfo\"\r\n            android:layout_width=\"match_parent\"\r\n            android:layout_height=\"wrap_content\"\r\n            android:layout_marginVertical=\"50dp\"\r\n            android:layout_marginBottom=\"10dp\"\r\n            android:text=\"Change your app settings.\"\r\n            android:textAlignment=\"center\"\r\n            android:textAppearance=\"@style/TextAppearance.AppCompat.Body1\"\r\n            android:textSize=\"20sp\" />\r\n\r\n        <TextView\r\n            android:id=\"@+id/tvMeasurementSystem\"\r\n            android:layout_width=\"match_parent\"\r\n            android:layout_height=\"wrap_content\"\r\n            android:text=\"Change Measurement System\"\r\n            android:textAlignment=\"center\"\r\n            android:textAppearance=\"@style/TextAppearance.AppCompat.Body1\"\r\n            android:textSize=\"20sp\" />\r\n\r\n        <RadioGroup\r\n            android:layout_width=\"match_parent\"\r\n            android:layout_height=\"76dp\"\r\n            android:layout_marginStart=\"15dp\">\r\n\r\n            <RadioButton\r\n                android:id=\"@+id/radioButton2\"\r\n                android:layout_width=\"match_parent\"\r\n                android:layout_height=\"wrap_content\"\r\n                android:text=\"Metric System\" />\r\n\r\n            <RadioButton\r\n                android:id=\"@+id/rtbnImperialSystem\"\r\n                android:layout_width=\"match_parent\"\r\n                android:layout_height=\"wrap_content\"\r\n                android:text=\"Imperial System\" />\r\n        </RadioGroup>\r\n\r\n    </LinearLayout>\r\n</FrameLayout>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/fragment_settings.xml	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/res/layout/fragment_settings.xml	(date 1606312712862)
+@@ -37,9 +37,10 @@
+             android:layout_marginStart="15dp">
+ 
+             <RadioButton
+-                android:id="@+id/radioButton2"
++                android:id="@+id/rbtnMetricSystem"
+                 android:layout_width="match_parent"
+                 android:layout_height="wrap_content"
++                android:checked="false"
+                 android:text="Metric System" />
+ 
+             <RadioButton
+Index: app/src/main/java/com/example/healthcoaches/StartScreen.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.healthcoaches;\r\n\r\nimport androidx.appcompat.app.AppCompatActivity;\r\n\r\nimport android.content.Intent;\r\nimport android.os.Bundle;\r\nimport android.view.View;\r\nimport android.widget.Button;\r\n\r\nimport com.example.healthcoaches.ui.login.LoginActivity;\r\n\r\npublic class StartScreen extends AppCompatActivity {\r\n\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_start_screen);\r\n\r\n        Button signUp = findViewById(R.id.btnStartSignUps);\r\n        signUp.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                Intent StartSignUpIntent= new Intent(getApplicationContext(), SignUpActivity.class);\r\n                startActivity(StartSignUpIntent);\r\n            }\r\n        });\r\n\r\n        Button Login = findViewById(R.id.btnStartLogin);\r\n        signUp.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                Intent StartLoginIntent= new Intent(getApplicationContext(), LoginActivity.class);\r\n                startActivity(StartLoginIntent);\r\n            }\r\n        });\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/StartScreen.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/StartScreen.java	(date 1606302692732)
+@@ -7,29 +7,29 @@
+ import android.view.View;
+ import android.widget.Button;
+ 
+-import com.example.healthcoaches.ui.login.LoginActivity;
+-
+ public class StartScreen extends AppCompatActivity {
+ 
++
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+         super.onCreate(savedInstanceState);
+         setContentView(R.layout.activity_start_screen);
+-
+-        Button signUp = findViewById(R.id.btnStartSignUps);
++         Button Login = findViewById(R.id.btnStartLogin);
++         Button signUp = findViewById(R.id.btnStartSignUps);
++
+         signUp.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View view) {
+-                Intent StartSignUpIntent= new Intent(getApplicationContext(), SignUpActivity.class);
++                Intent StartSignUpIntent = new Intent(getApplicationContext(), SignUpActivity.class);
+                 startActivity(StartSignUpIntent);
+             }
+         });
+ 
+-        Button Login = findViewById(R.id.btnStartLogin);
+-        signUp.setOnClickListener(new View.OnClickListener() {
++
++        Login.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View view) {
+-                Intent StartLoginIntent= new Intent(getApplicationContext(), LoginActivity.class);
++                Intent StartLoginIntent = new Intent(getApplicationContext(), LoginActivity.class);
+                 startActivity(StartLoginIntent);
+             }
+         });
+Index: app/src/main/java/com/example/healthcoaches/SignUpActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.healthcoaches;\r\n\r\nimport androidx.appcompat.app.AppCompatActivity;\r\n\r\nimport android.content.Intent;\r\nimport android.os.Bundle;\r\nimport android.view.View;\r\nimport android.widget.Button;\r\n\r\npublic class SignUpActivity extends AppCompatActivity {\r\n\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_sign_up);\r\n\r\n        Button signUp = findViewById(R.id.btnSignUp);\r\n        signUp.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                Intent SignUpIntent= new Intent(getApplicationContext(), BioInfoActivity.class);\r\n                startActivity(SignUpIntent);\r\n            }\r\n        });\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/SignUpActivity.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/SignUpActivity.java	(date 1606306780319)
+@@ -6,18 +6,44 @@
+ import android.os.Bundle;
+ import android.view.View;
+ import android.widget.Button;
++import android.widget.EditText;
++
++import com.example.healthcoaches.objectClasses.User;
++import com.google.firebase.database.DatabaseReference;
++import com.google.firebase.database.FirebaseDatabase;
+ 
+ public class SignUpActivity extends AppCompatActivity {
+ 
++    FirebaseDatabase database = FirebaseDatabase.getInstance();
++
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+         super.onCreate(savedInstanceState);
+         setContentView(R.layout.activity_sign_up);
+ 
++        final EditText username = findViewById(R.id.tilUsername);
++        final EditText password = findViewById(R.id.tilPassword);
+         Button signUp = findViewById(R.id.btnSignUp);
++
+         signUp.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View view) {
++
++                String usernameS = username.getEditableText().toString();
++                String passwordS = password.getEditableText().toString();
++                //Creating and initializing User class object
++                User user = new User(usernameS, passwordS);
++
++                //Getting Instance of Firebase realtime database
++                FirebaseDatabase databaseInstance = FirebaseDatabase.getInstance();
++
++                //Getting Reference to a User node
++                DatabaseReference userNode = database.getReference("User");
++
++                //Writing the User class object to that reference
++                userNode.setValue(user);
++
++                user.username = usernameS;
+                 Intent SignUpIntent= new Intent(getApplicationContext(), BioInfoActivity.class);
+                 startActivity(SignUpIntent);
+             }
+Index: app/src/main/java/com/example/healthcoaches/MainActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.healthcoaches;\r\n\r\nimport androidx.annotation.NonNull;\r\nimport androidx.appcompat.app.ActionBar;\r\nimport androidx.appcompat.app.ActionBarDrawerToggle;\r\nimport androidx.appcompat.app.AppCompatActivity;\r\nimport androidx.appcompat.widget.Toolbar;\r\nimport androidx.drawerlayout.widget.DrawerLayout;\r\nimport androidx.fragment.app.Fragment;\r\nimport androidx.fragment.app.FragmentManager;\r\n\r\nimport android.app.Activity;\r\nimport android.content.Intent;\r\nimport android.os.Bundle;\r\nimport android.view.MenuItem;\r\nimport android.view.View;\r\nimport android.widget.Button;\r\n\r\nimport com.google.android.material.navigation.NavigationView;\r\nimport com.google.firebase.database.DatabaseReference;\r\nimport com.google.firebase.database.FirebaseDatabase;\r\n\r\npublic class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {\r\n\r\n    FirebaseDatabase database = FirebaseDatabase.getInstance();\r\n    DatabaseReference myRef = database.getReference(\"message\");\r\n\r\nprivate Toolbar toolbar;\r\nprivate DrawerLayout drawerLayout;\r\nprivate NavigationView navigationView;\r\n\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_main);\r\n\r\n        toolbar = findViewById(R.id.main_toolbar);\r\n        setSupportActionBar(toolbar);\r\n        Button targetGoals = findViewById(R.id.btnTargetGoals);\r\n        targetGoals.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                Intent targetGoalsIntent = new Intent(getApplicationContext(), TargetGoalsActivity.class);\r\n                startActivity(targetGoalsIntent);\r\n            }\r\n        });\r\n\r\n        Button dailyLog = findViewById(R.id.btnDailyLog);\r\n        targetGoals.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                Intent DailyLogIntent= new Intent(getApplicationContext(), DailyLogActivity.class);\r\n                startActivity(DailyLogIntent);\r\n            }\r\n        });\r\n\r\n        Button dailyChallenge = findViewById(R.id.btnDailyChallenge);\r\n        targetGoals.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                Intent DailyChallengeIntent= new Intent(getApplicationContext(), DailyChallengeActivity.class);\r\n                startActivity(DailyChallengeIntent);\r\n            }\r\n        });\r\n\r\n        Button SaveMeals = findViewById(R.id.btnSaveMeals);\r\n        targetGoals.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                Intent SaveMealsIntent= new Intent(getApplicationContext(), SaveMealsActivity.class);\r\n                startActivity(SaveMealsIntent);\r\n            }\r\n        });\r\n\r\n        Button Quiz = findViewById(R.id.btnQuiz);\r\n        targetGoals.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                Intent QuizIntent= new Intent(getApplicationContext(), QuizActivity.class);\r\n                startActivity(QuizIntent);\r\n            }\r\n        });\r\n\r\n        Button BloodSugarBalancing = findViewById(R.id.btnGlCalc);\r\n        targetGoals.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View view) {\r\n                Intent BloodSugarBalancingIntent= new Intent(getApplicationContext(), BloodSugarBalancingActivity.class);\r\n                startActivity(BloodSugarBalancingIntent);\r\n            }\r\n        });\r\n\r\n        drawerLayout = findViewById(R.id.drawer_layout);\r\n        navigationView = findViewById(R.id.nav_view);\r\n\r\n\r\n        ActionBarDrawerToggle actionBarDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.openNavDrawer, R.string.closeNavDrawer);\r\n\r\n       drawerLayout.addDrawerListener(actionBarDrawerToggle);\r\n       actionBarDrawerToggle.syncState();\r\n       navigationView.setNavigationItemSelectedListener(this);\r\n\r\n    }\r\n\r\n    private void setupDrawerContent(NavigationView navigationView) {\r\n        navigationView.setNavigationItemSelectedListener(\r\n                new NavigationView.OnNavigationItemSelectedListener() {\r\n                    @Override\r\n                    public boolean onNavigationItemSelected(MenuItem menuItem) {\r\n                        selectDrawerItem(menuItem);\r\n                        return true;\r\n                    }\r\n                });\r\n    }\r\n\r\n    public void selectDrawerItem(MenuItem menuItem) {\r\n        // Create a new fragment and specify the fragment to show based on nav item clicked\r\n        Fragment fragment = null;\r\n        Class fragmentClass;\r\n        switch(menuItem.getItemId()) {\r\n            case R.id.nav_profile:\r\n                fragmentClass = ProfileFragment.class;\r\n                break;\r\n            case R.id.nav_settings:\r\n                fragmentClass = SettingsFragment.class;\r\n                break;\r\n            default:\r\n                fragmentClass = ProfileFragment.class;\r\n        }\r\n\r\n        try {\r\n            fragment = (Fragment) fragmentClass.newInstance();\r\n        } catch (Exception e) {\r\n            e.printStackTrace();\r\n        }\r\n\r\n        // Insert the fragment by replacing any existing fragment\r\n        FragmentManager fragmentManager = getSupportFragmentManager();\r\n        fragmentManager.beginTransaction().replace(R.id.flContent, fragment).commit();\r\n\r\n        // Highlight the selected item has been done by NavigationView\r\n        menuItem.setChecked(true);\r\n    }\r\n\r\n\r\n    @Override\r\n    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {\r\n        return false;\r\n    }\r\n\r\n    @Override\r\n    public void onPointerCaptureChanged(boolean hasCapture) {\r\n\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/MainActivity.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/MainActivity.java	(date 1606303030104)
+@@ -1,7 +1,6 @@
+ package com.example.healthcoaches;
+ 
+ import androidx.annotation.NonNull;
+-import androidx.appcompat.app.ActionBar;
+ import androidx.appcompat.app.ActionBarDrawerToggle;
+ import androidx.appcompat.app.AppCompatActivity;
+ import androidx.appcompat.widget.Toolbar;
+@@ -9,7 +8,6 @@
+ import androidx.fragment.app.Fragment;
+ import androidx.fragment.app.FragmentManager;
+ 
+-import android.app.Activity;
+ import android.content.Intent;
+ import android.os.Bundle;
+ import android.view.MenuItem;
+@@ -17,23 +15,25 @@
+ import android.widget.Button;
+ 
+ import com.google.android.material.navigation.NavigationView;
+-import com.google.firebase.database.DatabaseReference;
+-import com.google.firebase.database.FirebaseDatabase;
+ 
+ public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+ 
+-    FirebaseDatabase database = FirebaseDatabase.getInstance();
+-    DatabaseReference myRef = database.getReference("message");
+ 
+-private Toolbar toolbar;
+-private DrawerLayout drawerLayout;
+-private NavigationView navigationView;
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+         super.onCreate(savedInstanceState);
+         setContentView(R.layout.activity_main);
+ 
++        Toolbar toolbar;
++        DrawerLayout drawerLayout;
++        NavigationView navigationView;
++        Button dailyLog = findViewById(R.id.btnDailyLog);
++        Button dailyChallenge = findViewById(R.id.btnDailyChallenge);
++        Button SaveMeals = findViewById(R.id.btnSaveMeals);
++     // Button Quiz = findViewById(R.id.btnQuiz);
++        Button BloodSugarBalancing = findViewById(R.id.btnGlCalc);
++
+         toolbar = findViewById(R.id.main_toolbar);
+         setSupportActionBar(toolbar);
+         Button targetGoals = findViewById(R.id.btnTargetGoals);
+@@ -45,47 +45,44 @@
+             }
+         });
+ 
+-        Button dailyLog = findViewById(R.id.btnDailyLog);
+-        targetGoals.setOnClickListener(new View.OnClickListener() {
++        dailyLog.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View view) {
+-                Intent DailyLogIntent= new Intent(getApplicationContext(), DailyLogActivity.class);
++                Intent DailyLogIntent = new Intent(getApplicationContext(), DailyLogActivity.class);
+                 startActivity(DailyLogIntent);
+             }
+         });
+ 
+-        Button dailyChallenge = findViewById(R.id.btnDailyChallenge);
+-        targetGoals.setOnClickListener(new View.OnClickListener() {
++        dailyChallenge.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View view) {
+-                Intent DailyChallengeIntent= new Intent(getApplicationContext(), DailyChallengeActivity.class);
++                Intent DailyChallengeIntent = new Intent(getApplicationContext(), DailyChallengeActivity.class);
+                 startActivity(DailyChallengeIntent);
+             }
+         });
+ 
+-        Button SaveMeals = findViewById(R.id.btnSaveMeals);
+-        targetGoals.setOnClickListener(new View.OnClickListener() {
++        SaveMeals.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View view) {
+-                Intent SaveMealsIntent= new Intent(getApplicationContext(), SaveMealsActivity.class);
++                Intent SaveMealsIntent = new Intent(getApplicationContext(), SaveMealsActivity.class);
+                 startActivity(SaveMealsIntent);
+             }
+         });
++        /*
++        Quiz requires more research into health and lifestyle choices to be made at this time.
+ 
+-        Button Quiz = findViewById(R.id.btnQuiz);
+-        targetGoals.setOnClickListener(new View.OnClickListener() {
++        Quiz.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View view) {
+-                Intent QuizIntent= new Intent(getApplicationContext(), QuizActivity.class);
++                Intent QuizIntent = new Intent(getApplicationContext(), QuizActivity.class);
+                 startActivity(QuizIntent);
+             }
+-        });
++        });*/
+ 
+-        Button BloodSugarBalancing = findViewById(R.id.btnGlCalc);
+-        targetGoals.setOnClickListener(new View.OnClickListener() {
++        BloodSugarBalancing.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View view) {
+-                Intent BloodSugarBalancingIntent= new Intent(getApplicationContext(), BloodSugarBalancingActivity.class);
++                Intent BloodSugarBalancingIntent = new Intent(getApplicationContext(), BloodSugarBalancingActivity.class);
+                 startActivity(BloodSugarBalancingIntent);
+             }
+         });
+@@ -115,12 +112,9 @@
+ 
+     public void selectDrawerItem(MenuItem menuItem) {
+         // Create a new fragment and specify the fragment to show based on nav item clicked
+-        Fragment fragment = null;
++        Fragment fragment = new Fragment();//might be fragment = null;
+         Class fragmentClass;
+         switch(menuItem.getItemId()) {
+-            case R.id.nav_profile:
+-                fragmentClass = ProfileFragment.class;
+-                break;
+             case R.id.nav_settings:
+                 fragmentClass = SettingsFragment.class;
+                 break;
+Index: .idea/dictionaries/jmfpr.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/dictionaries/jmfpr.xml	(date 1606322931750)
++++ .idea/dictionaries/jmfpr.xml	(date 1606322931750)
+@@ -0,0 +1,8 @@
++<component name="ProjectDictionaryState">
++  <dictionary name="jmfpr">
++    <words>
++      <w>glycaemic</w>
++      <w>pescatarian</w>
++    </words>
++  </dictionary>
++</component>
+\ No newline at end of file
+Index: app/src/main/java/com/example/healthcoaches/TargetGoalsActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.healthcoaches;\r\n\r\nimport androidx.annotation.NonNull;\r\nimport androidx.appcompat.app.ActionBarDrawerToggle;\r\nimport androidx.appcompat.app.AppCompatActivity;\r\nimport androidx.appcompat.widget.Toolbar;\r\nimport androidx.drawerlayout.widget.DrawerLayout;\r\n\r\nimport android.os.Bundle;\r\nimport android.view.MenuItem;\r\n\r\nimport com.google.android.material.navigation.NavigationView;\r\n\r\npublic class TargetGoalsActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {\r\n    private Toolbar toolbar;\r\n    private DrawerLayout drawerLayout;\r\n    private NavigationView navigationView;\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_target_goals);\r\n\r\n        toolbar = findViewById(R.id.target_Goals_toolbar);\r\n        setSupportActionBar(toolbar);\r\n\r\n        drawerLayout = findViewById(R.id.goals_drawer_layout);\r\n        navigationView = findViewById(R.id.goals_nav_view);\r\n\r\n        ActionBarDrawerToggle actionBarDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.openNavDrawer, R.string.closeNavDrawer);\r\n\r\n        drawerLayout.addDrawerListener(actionBarDrawerToggle);\r\n        actionBarDrawerToggle.syncState();\r\n        navigationView.setNavigationItemSelectedListener(this);\r\n}\r\n\r\n    @Override\r\n    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {\r\n        return false;\r\n    }\r\n\r\n    @Override\r\n    public void onPointerCaptureChanged(boolean hasCapture) {\r\n\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/healthcoaches/TargetGoalsActivity.java	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/java/com/example/healthcoaches/TargetGoalsActivity.java	(date 1606336013329)
+@@ -6,20 +6,37 @@
+ import androidx.appcompat.widget.Toolbar;
+ import androidx.drawerlayout.widget.DrawerLayout;
+ 
++import com.example.healthcoaches.objectClasses.TargetGoals;
++import com.example.healthcoaches.objectClasses.User;
++import com.google.firebase.database.DatabaseReference;
++import com.google.firebase.database.FirebaseDatabase;
++
+ import android.os.Bundle;
+ import android.view.MenuItem;
++import android.view.View;
++import android.widget.Button;
++import android.widget.EditText;
+ 
+ import com.google.android.material.navigation.NavigationView;
+ 
+ public class TargetGoalsActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+-    private Toolbar toolbar;
+-    private DrawerLayout drawerLayout;
+-    private NavigationView navigationView;
++
++
++    User user = new User();
++    FirebaseDatabase database = FirebaseDatabase.getInstance();
++
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+         super.onCreate(savedInstanceState);
+         setContentView(R.layout.activity_target_goals);
+ 
++        Toolbar toolbar;
++        DrawerLayout drawerLayout;
++        NavigationView navigationView;
++        EditText WeightGoal = findViewById(R.id.edtWeightGoal);
++        EditText CalorieGoal = findViewById(R.id.edtCalorieGoal);
++        Button goalSubmit = findViewById(R.id.btnGoalSubmit);
++
+         toolbar = findViewById(R.id.target_Goals_toolbar);
+         setSupportActionBar(toolbar);
+ 
+@@ -31,7 +48,33 @@
+         drawerLayout.addDrawerListener(actionBarDrawerToggle);
+         actionBarDrawerToggle.syncState();
+         navigationView.setNavigationItemSelectedListener(this);
+-}
++
++        String weightGoal;
++        String calorieGoal;
++        String username;
++
++        username = user.username;
++        weightGoal = WeightGoal.getEditableText().toString();
++        calorieGoal = CalorieGoal.getEditableText().toString();
++
++        final TargetGoals targetGoals = new TargetGoals(weightGoal, calorieGoal, username);
++
++        //Getting Instance of Firebase realtime database
++        FirebaseDatabase databaseInstance = FirebaseDatabase.getInstance();
++
++        //Getting Reference to a Goal node
++        final DatabaseReference goalNode = database.getReference("TargetGoals");
++
++        goalSubmit.setOnClickListener(new View.OnClickListener() {
++            @Override
++            public void onClick(View view) {
++                //Writing the Goals class object to that reference
++                goalNode.setValue(targetGoals);
++            }
++        });
++    }
++
++
+ 
+     @Override
+     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+Index: app/src/main/res/layout/activity_main.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<androidx.drawerlayout.widget.DrawerLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\r\n    xmlns:tools=\"http://schemas.android.com/tools\"\r\n    android:layout_width=\"match_parent\"\r\n    android:layout_height=\"match_parent\"\r\n    tools:context=\".MainActivity\"\r\n    android:id=\"@+id/drawer_layout\">\r\n\r\n<androidx.coordinatorlayout.widget.CoordinatorLayout\r\n    android:layout_height=\"match_parent\"\r\n    android:layout_width=\"match_parent\">\r\n\r\n    <com.google.android.material.appbar.AppBarLayout\r\n        android:layout_width=\"match_parent\"\r\n        android:layout_height=\"wrap_content\"\r\n        android:background=\"#A7F6C6\">\r\n\r\n        <androidx.appcompat.widget.Toolbar\r\n            android:id=\"@+id/main_toolbar\"\r\n            android:layout_width=\"match_parent\"\r\n            android:layout_height=\"match_parent\"\r\n            android:background=\"@android:color/white\">\r\n\r\n        </androidx.appcompat.widget.Toolbar>\r\n\r\n    </com.google.android.material.appbar.AppBarLayout>\r\n\r\n    <ScrollView\r\n        android:layout_width=\"match_parent\"\r\n        android:layout_height=\"match_parent\">\r\n\r\n        <LinearLayout\r\n            android:layout_width=\"match_parent\"\r\n            android:layout_height=\"wrap_content\"\r\n            android:layout_marginVertical=\"60dp\"\r\n            android:orientation=\"vertical\">\r\n\r\n            <Button\r\n                android:id=\"@+id/btnDailyChallenge\"\r\n                android:layout_width=\"200dp\"\r\n                android:layout_height=\"80dp\"\r\n                android:layout_marginVertical=\"10dp\"\r\n                android:layout_marginStart=\"100dp\"\r\n                android:text=\"Daily Challenge\" />\r\n\r\n            <Button\r\n                android:id=\"@+id/btnDailyLog\"\r\n                android:layout_width=\"200dp\"\r\n                android:layout_height=\"80dp\"\r\n                android:layout_marginVertical=\"10dp\"\r\n                android:layout_marginStart=\"100dp\"\r\n                android:text=\"Record Daily Log\" />\r\n\r\n            <Button\r\n                android:id=\"@+id/btnTargetGoals\"\r\n                android:layout_width=\"200dp\"\r\n                android:layout_height=\"80dp\"\r\n                android:layout_marginVertical=\"10dp\"\r\n                android:layout_marginStart=\"100dp\"\r\n                android:text=\"Set Target Goals\" />\r\n\r\n            <Button\r\n                android:id=\"@+id/btnSaveMeals\"\r\n                android:layout_width=\"200dp\"\r\n                android:layout_height=\"80dp\"\r\n                android:layout_marginVertical=\"10dp\"\r\n                android:layout_marginStart=\"100dp\"\r\n                android:text=\"Take a picture of your meal\" />\r\n\r\n            <Button\r\n                android:id=\"@+id/btnQuiz\"\r\n                android:layout_width=\"200dp\"\r\n                android:layout_height=\"80dp\"\r\n                android:layout_marginVertical=\"10dp\"\r\n                android:layout_marginStart=\"100dp\"\r\n                android:text=\"Take the lifestyle Quiz!\" />\r\n\r\n            <Button\r\n                android:id=\"@+id/btnGlCalc\"\r\n                android:layout_width=\"200dp\"\r\n                android:layout_height=\"80dp\"\r\n                android:layout_marginVertical=\"10dp\"\r\n                android:layout_marginStart=\"100dp\"\r\n                android:text=\"Blood Sugar Balancing\" />\r\n\r\n            <FrameLayout\r\n                android:id=\"@+id/flContent\"\r\n                android:layout_width=\"match_parent\"\r\n                android:layout_height=\"match_parent\"\r\n                app:layout_behavior=\"@string/appbar_scrolling_view_behavior\" />\r\n\r\n        </LinearLayout>\r\n    </ScrollView>\r\n\r\n</androidx.coordinatorlayout.widget.CoordinatorLayout>\r\n\r\n        <com.google.android.material.navigation.NavigationView\r\n            android:layout_width=\"wrap_content\"\r\n            android:layout_height=\"match_parent\"\r\n            android:layout_gravity=\"start\"\r\n            android:id=\"@+id/nav_view\"\r\n            app:menu=\"@menu/navigation_menu\" />\r\n\r\n\r\n</androidx.drawerlayout.widget.DrawerLayout>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/activity_main.xml	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/res/layout/activity_main.xml	(date 1606297008369)
+@@ -68,13 +68,13 @@
+                 android:layout_marginStart="100dp"
+                 android:text="Take a picture of your meal" />
+ 
+-            <Button
++          <!--  <Button
+                 android:id="@+id/btnQuiz"
+                 android:layout_width="200dp"
+                 android:layout_height="80dp"
+                 android:layout_marginVertical="10dp"
+                 android:layout_marginStart="100dp"
+-                android:text="Take the lifestyle Quiz!" />
++                android:text="Take the lifestyle Quiz!" /> -->
+ 
+             <Button
+                 android:id="@+id/btnGlCalc"
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    package=\"com.example.healthcoaches\">\r\n    <!-- Built by James Feldman 19002857 -->\r\n    <application\r\n        android:allowBackup=\"true\"\r\n        android:icon=\"@mipmap/ic_launcher\"\r\n        android:label=\"@string/app_name\"\r\n        android:roundIcon=\"@mipmap/ic_launcher_round\"\r\n        android:supportsRtl=\"true\"\r\n        android:theme=\"@style/AppTheme\">\r\n        <activity android:name=\".BloodSugarBalancingActivity\"></activity>\r\n        <activity android:name=\".QuizActivity\"></activity>\r\n        <activity android:name=\".SaveMealsActivity\"></activity>\r\n        <activity android:name=\".DailyChallengeActivity\"></activity>\r\n        <activity android:name=\".DailyLogActivity\"></activity>\r\n        <activity android:name=\".TargetGoalsActivity\"></activity>\r\n        <activity android:name=\".BioInfoActivity\"></activity>\r\n        <activity android:name=\".SignUpActivity\"></activity>\r\n        <activity android:name=\".StartScreen\">\r\n            <intent-filter>\r\n                <action android:name=\"android.intent.action.MAIN\" />\r\n\r\n                <category android:name=\"android.intent.category.LAUNCHER\" />\r\n            </intent-filter>\r\n        </activity>\r\n        <activity\r\n            android:name=\".ui.login.LoginActivity\"\r\n            android:label=\"@string/title_activity_login\" />\r\n        <activity android:name=\".MainActivity\">\r\n\r\n            <!--\r\n            <intent-filter>\r\n                <action android:name=\"android.intent.action.MAIN\" />\r\n\r\n                <category android:name=\"android.intent.category.LAUNCHER\" />\r\n            </intent-filter>\r\n            -->\r\n        </activity>\r\n\r\n        <provider\r\n            android:name=\"androidx.core.content.FileProvider\"\r\n            android:authorities=\"com.example.android.fileprovider\"\r\n            android:exported=\"false\"\r\n            android:grantUriPermissions=\"true\">\r\n            <meta-data\r\n                android:name=\"android.support.FILE_PROVIDER_PATHS\"\r\n                android:resource=\"@xml/file_paths\" />\r\n        </provider>\r\n    </application>\r\n\r\n    <uses-feature\r\n        android:name=\"android.hardware.camera\"\r\n        android:required=\"false\" />\r\n    <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />\r\n\r\n    <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />\r\n\r\n</manifest>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/AndroidManifest.xml	(revision 359382d7fc2de53412137bd2454d3ea751f5f6ef)
++++ app/src/main/AndroidManifest.xml	(date 1606325367586)
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+     package="com.example.healthcoaches">
+-    <!-- Built by James Feldman 19002857 -->
++
+     <application
+         android:allowBackup="true"
+         android:icon="@mipmap/ic_launcher"
+@@ -9,14 +9,16 @@
+         android:roundIcon="@mipmap/ic_launcher_round"
+         android:supportsRtl="true"
+         android:theme="@style/AppTheme">
+-        <activity android:name=".BloodSugarBalancingActivity"></activity>
+-        <activity android:name=".QuizActivity"></activity>
+-        <activity android:name=".SaveMealsActivity"></activity>
+-        <activity android:name=".DailyChallengeActivity"></activity>
+-        <activity android:name=".DailyLogActivity"></activity>
+-        <activity android:name=".TargetGoalsActivity"></activity>
+-        <activity android:name=".BioInfoActivity"></activity>
+-        <activity android:name=".SignUpActivity"></activity>
++        <activity android:name=".BsbNext"></activity>
++        <activity android:name=".LoginActivity" />
++        <activity android:name=".BloodSugarBalancingActivity" />
++        <activity android:name=".QuizActivity" />
++        <activity android:name=".SaveMealsActivity" />
++        <activity android:name=".DailyChallengeActivity" />
++        <activity android:name=".DailyLogActivity" />
++        <activity android:name=".TargetGoalsActivity" />
++        <activity android:name=".BioInfoActivity" />
++        <activity android:name=".SignUpActivity" />
+         <activity android:name=".StartScreen">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+@@ -24,15 +26,11 @@
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
+         </activity>
+-        <activity
+-            android:name=".ui.login.LoginActivity"
+-            android:label="@string/title_activity_login" />
+         <activity android:name=".MainActivity">
+ 
+             <!--
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+-
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
+             -->
